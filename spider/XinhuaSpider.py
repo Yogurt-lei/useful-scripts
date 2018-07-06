@@ -13,10 +13,10 @@ from bs4 import BeautifulSoup
 REQ_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
 }
-XINHUA_BASE_URL = "http://www.xinhuanet.com"
-TODAY_REGEX = XINHUA_BASE_URL + '/politics/' + time.strftime("%Y-%m") + '/' + time.strftime("%d") + '/'
-XINHUA_SAVE_ACTION = 'http://localhost:8081/kbase-core/action/spider/xinhua!save.htm'
-CATE_DIR = "orz测试"
+XINHUA_BASE_URL = "http://www.xinhuanet.com/politics/"
+TODAY_REGEX = XINHUA_BASE_URL + time.strftime("%Y-%m") + '/' + time.strftime("%d") + '/'
+XINHUA_SAVE_ACTION = 'xxx/kbase-core/action/spider/xinhua!save.htm'
+CATE_DIR = "新闻测试"
 
 
 def extract_news_list():
@@ -28,50 +28,58 @@ def extract_news_list():
     return soup.find_all('a', href=re.compile(r'' + TODAY_REGEX + 'c.*\.htm'))
 
 
-def extract_news_data(url_List):
+def extract_news_data(url_list):
     """
     提取新闻内容
     """
+    handled_list = []
     news_data = []
-    for tag in url_List:
-        _title = tag.text
-        _content = ''
-        url = tag['href']
-        soup = BeautifulSoup(str(requests.get(url, headers=REQ_HEADERS).content, 'utf-8'), "html.parser")
-        # 特殊处理c_num为9位的元素 该种新闻为图片分页
-        if len(url[url.rfind('c_') + 2:url.rfind('.htm')]) == 9:
-            # 当前页图片
-            article = soup.find(class_='article')
-            p = article.find('p')
-            img = p.find('img')
-            img['src'] = TODAY_REGEX + img['src']
-            _content += str(p)
-            page_list = []
-            for div in article.find_all('div', id=re.compile(r'^div_page_roll')):
-                for a in div.find_all('a', href=re.compile(r'http://.*')):
-                    page_list.append(a['href'])
-            _page_list = list(set(page_list))
-            _page_list.sort(key=page_list.index)
+    for tag in url_list:
+        _title = tag.text if tag.text else tag.find('img')['alt']
+        _url = tag['href']
+        if _url in handled_list:
+            continue
+        handled_list.append(_url)
+        page_list, _content = extract_page_news(True, _url)
+        for page_url in page_list:
+            _content += extract_page_news(False, page_url)
+        news_data.append({
+            'id': _url[_url.rfind('c_') + 2:_url.rfind('.')],
+            'url': _url,
+            'title': _title,
+            'content': _content.replace(u'\xa0', u' ').replace(u'\u3000', u'  ')
+        })
 
-            # 处理每个分页的图片
-            for _url in _page_list:
-                soup = BeautifulSoup(str(requests.get(_url, headers=REQ_HEADERS).content, 'utf-8'), "html.parser")
-                article = soup.find(class_='article')
-                p = article.find('p')
-                img = p.find('img')
-                img['src'] = TODAY_REGEX + img['src']
-                _content += str(p)
-        else:
-            # 正常新闻
-            p_detail = soup.find(id="p-detail").find_all('p')
-            for p in p_detail:
-                for img in p.find_all('img'):
-                    img['src'] = TODAY_REGEX + img['src']
-                # 去除乱码
-                _content += str(p)
-        news_data.append({'title': _title, 'content': _content.replace(u'\xa0', u' ').replace(u'\u3000', u'  ')})
-
+    print(news_data)
     return news_data
+
+
+def extract_page_news(is_first_page, url):
+    """
+    分页提取内容
+    """
+    soup = BeautifulSoup(str(requests.get(url, headers=REQ_HEADERS).content, 'utf-8'), "html.parser")
+    page_list = []
+    if is_first_page:
+        for page in soup.find_all('div', id=re.compile(r'^div_page_roll')):
+            for a in page.find_all('a', href=re.compile(r'http://.*')):
+                if a['href'] not in page_list:
+                    page_list.append(a['href'])
+    main_content = soup.find(class_='article')  # 纯图分页
+    if main_content is None:
+        main_content = soup.find(class_="content")  # 图片+描述 分页
+        if main_content is None:
+            main_content = soup.find(id="p-detail")  # 图文混排
+    content = ''
+    for p in main_content.find_all('p'):
+        for img in p.find_all('img'):
+            img['src'] = TODAY_REGEX + img['src']
+        # 含有分页块 跳过该p
+        if p.find('div', id=re.compile(r'^div_page_roll')) is not None:
+            continue
+        content += str(p)
+
+    return (page_list, content) if is_first_page else content
 
 
 def save_2_core(news_data):
