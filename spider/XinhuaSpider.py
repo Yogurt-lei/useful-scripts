@@ -50,7 +50,6 @@ def extract_news_data(url_list):
             'content': _content.replace(u'\xa0', u' ').replace(u'\u3000', u'  ')
         })
 
-    print(news_data)
     return news_data
 
 
@@ -73,7 +72,8 @@ def extract_page_news(is_first_page, url):
     content = ''
     for p in main_content.find_all('p'):
         for img in p.find_all('img'):
-            img['src'] = TODAY_REGEX + img['src']
+            if not img['src'].startswith(('http://', 'https://')):
+                img['src'] = TODAY_REGEX + img['src']
         # 含有分页块 跳过该p
         if p.find('div', id=re.compile(r'^div_page_roll')) is not None:
             continue
