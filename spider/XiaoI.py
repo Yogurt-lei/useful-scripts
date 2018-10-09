@@ -20,19 +20,19 @@ APP = {
 }
 
 TEMPLATE = '<div style="width: 100%; padding-top: 10px; padding-bottom: 20px;" class="col-xs-12 container">\
-                                <div>\
-                                    <div class="col-sm-4 col-xs-12">\
-                                        <div style="font-weight: 700; font-size: 1.2em">\
-                                            {{title}}\
-                                        </div>\
-                                    <div style="padding-bottom: 10px; padding-top: 10px">\
-                                        <img src="' + BASE_URL + '/Upload/{{pic}}" style="width: 100%" class="NewImg" />\
-                                    </div>\
-                                </div>\
-                                <div class="col-sm-8  col-xs-12 lineheight NewDetail" style="text-align: left">\
-                                    {{content}}\
-                                </div>\
-                            </div>'
+                <div>\
+                    <div class="col-sm-4 col-xs-12">\
+                        <div style="font-weight: 700; font-size: 1.2em">\
+                            {{title}}\
+                        </div>\
+                    <div style="padding-bottom: 10px; padding-top: 10px">\
+                        <img src="' + BASE_URL + '/Upload/{{pic}}" style="width: 100%" class="NewImg" />\
+                    </div>\
+                </div>\
+                <div class="col-sm-8  col-xs-12 lineheight NewDetail" style="text-align: left">\
+                    {{content}}\
+                </div>\
+            </div>'
 
 if __name__ == '__main__':
     print('[%s] start grab data' % time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -61,6 +61,7 @@ if __name__ == '__main__':
                 counter = counter + 1
                 respJson = requests.get(url, headers=HEADERS).json()
 
+                # 填充模版 替换转义字符
                 content = TEMPLATE.replace('{{title}}', respJson['title']) \
                     .replace('{{content}}', respJson['content']) \
                     .replace('{{pic}}', respJson['pic']) \
@@ -77,7 +78,6 @@ if __name__ == '__main__':
             news_data[key] = {'category': cate_name, 'list': data_list}
         print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), counter))
         params = {'newsData': json.dumps(news_data)}
-        print(news_data)
         respJson = requests.post(XIAOI_SAVE_ACTION, params, headers=HEADERS, timeout=20).json()
         print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), respJson))
         print('=============================================================================')
