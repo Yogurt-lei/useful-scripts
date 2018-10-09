@@ -61,13 +61,18 @@ if __name__ == '__main__':
                 counter = counter + 1
                 respJson = requests.get(url, headers=HEADERS).json()
 
+                content = TEMPLATE.replace('{{title}}', respJson['title']) \
+                    .replace('{{content}}', respJson['content']) \
+                    .replace('{{pic}}', respJson['pic']) \
+                    .replace('&lt;', '<') \
+                    .replace('&gt;', '>') \
+                    .replace('<img src=\"/upload/', '<img src=\"' + BASE_URL + '/upload/')
+
                 data_list.append({
                     'id': id,
                     'url': url,
                     'title': title,
-                    'content': TEMPLATE.replace('{{title}}', respJson['title'])
-                        .replace('{{content}}', respJson['content'])
-                        .replace('{{pic}}', respJson['pic'])
+                    'content': content
                 })
             news_data[key] = {'category': cate_name, 'list': data_list}
         print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), counter))
