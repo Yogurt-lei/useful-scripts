@@ -15,7 +15,7 @@ REQ_HEADERS = {
 }
 XINHUA_BASE_URL = "http://www.xinhuanet.com/politics/"
 TODAY_REGEX = XINHUA_BASE_URL + time.strftime("%Y-%m") + '/' + time.strftime("%d") + '/'
-XINHUA_SAVE_ACTION = 'xxx/kbase-core/action/spider/xinhua!save.htm'
+XINHUA_SAVE_ACTION = 'http://kbs143.demo.xiaoi.com/kbase-core/action/spider/xinhua!save.htm'
 CATE_DIR = "新闻测试"
 
 
@@ -44,12 +44,12 @@ def extract_news_data(url_list):
         for page_url in page_list:
             _content += extract_page_news(False, page_url)
         news_data.append({
-            'id': _url[_url.rfind('c_') + 2:_url.rfind('.')],
+            'id': _url[_url.rfind('c_'):_url.rfind('.')],
             'url': _url,
             'title': _title,
             'content': _content.replace(u'\xa0', u' ').replace(u'\u3000', u'  ')
         })
-
+        print("===>", _url, _title, "<===")
     return news_data
 
 
@@ -88,8 +88,8 @@ def save_2_core(news_data):
     """
     try:
         params = {'newsData': json.dumps(news_data), 'categoryName': CATE_DIR}
-        respJson = requests.post(XINHUA_SAVE_ACTION, params, headers=REQ_HEADERS, timeout=20).json()
-        print(respJson)
+        # respJson = requests.post(XINHUA_SAVE_ACTION, params, headers=REQ_HEADERS, timeout=20).json()
+        # print(respJson)
     except Exception as e:
         print(str(e))
 
