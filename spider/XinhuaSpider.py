@@ -84,7 +84,7 @@ if __name__ == '__main__':
         news_data = extract_news_data()
         print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), COUNTER))
         params = {'newsData': json.dumps({'origin': '新华网', 'data': news_data})}
-        resp = requests.post('http://localhost:8081/kbase-core/action/spider/ai-of-day!save.htm',
+        resp = requests.post('http://172.16.34.37:8081/kbase-core/action/spider/ai-of-day!save.htm',
                              params, headers=HEADERS, timeout=120)
         if resp.status_code == 200 and resp.content:
             print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), resp.json()))

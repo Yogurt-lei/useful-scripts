@@ -30,7 +30,7 @@ APP = {
 }
 
 if __name__ == '__main__':
-    print('[%s] start grab data' % time.strftime('%Y-%m-%d %H:%M:%S'))
+    print('[%s] start grab aiofweek data' % time.strftime('%Y-%m-%d %H:%M:%S'))
     news_data = {}
     counter = 0
     try:
