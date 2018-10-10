@@ -55,7 +55,7 @@ if __name__ == '__main__':
                 startTime = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second,
                                                      microseconds=now.microsecond)
                 endTime = startTime + datetime.timedelta(hours=23, minutes=59, seconds=59)
-                if int(startTime.timestamp()) <= create_time <= int(endTime.timestamp()):
+                if not int(startTime.timestamp()) <= create_time <= int(endTime.timestamp()):
                     continue
 
                 counter = counter + 1
