@@ -10,30 +10,24 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
-REQ_HEADERS = {
+HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
 }
 XINHUA_BASE_URL = "http://www.xinhuanet.com/politics/"
 TODAY_REGEX = XINHUA_BASE_URL + time.strftime("%Y-%m") + '/' + time.strftime("%d") + '/'
-XINHUA_SAVE_ACTION = 'http://kbs143.demo.xiaoi.com/kbase-core/action/spider/xinhua!save.htm'
-CATE_DIR = "新闻测试"
+COUNTER = 0
 
 
-def extract_news_list():
-    """
-        提取今日时政新闻列表url list
-    """
-    html = str(requests.get(XINHUA_BASE_URL, headers=REQ_HEADERS).content, 'utf-8')
-    soup = BeautifulSoup(html, "html.parser")
-    return soup.find_all('a', href=re.compile(r'' + TODAY_REGEX + 'c.*\.htm'))
-
-
-def extract_news_data(url_list):
+def extract_news_data():
     """
     提取新闻内容
     """
+    global COUNTER
+    html = str(requests.get(XINHUA_BASE_URL, headers=HEADERS).content, 'utf-8')
+    soup = BeautifulSoup(html, "html.parser")
+    url_list = soup.find_all('a', href=re.compile(r'' + TODAY_REGEX + 'c.*\.htm'))
     handled_list = []
-    news_data = []
+    data_list = []
     for tag in url_list:
         _title = tag.text if tag.text else tag.find('img')['alt']
         _url = tag['href']
@@ -43,13 +37,15 @@ def extract_news_data(url_list):
         page_list, _content = extract_page_news(True, _url)
         for page_url in page_list:
             _content += extract_page_news(False, page_url)
-        news_data.append({
+        data_list.append({
             'id': _url[_url.rfind('c_'):_url.rfind('.')],
             'url': _url,
             'title': _title,
             'content': _content.replace(u'\xa0', u' ').replace(u'\u3000', u'  ')
         })
-        print("===>", _url, _title, "<===")
+        COUNTER = COUNTER + 1
+
+    news_data['xinhua'] = {'category': '新华网', 'list': data_list}
     return news_data
 
 
@@ -57,7 +53,7 @@ def extract_page_news(is_first_page, url):
     """
     分页提取内容
     """
-    soup = BeautifulSoup(str(requests.get(url, headers=REQ_HEADERS).content, 'utf-8'), "html.parser")
+    soup = BeautifulSoup(str(requests.get(url, headers=HEADERS).content, 'utf-8'), "html.parser")
     page_list = []
     if is_first_page:
         for page in soup.find_all('div', id=re.compile(r'^div_page_roll')):
@@ -82,17 +78,18 @@ def extract_page_news(is_first_page, url):
     return (page_list, content) if is_first_page else content
 
 
-def save_2_core(news_data):
-    """
-    调用kbase-core接口入库
-    """
+if __name__ == '__main__':
+    print('[%s] start grab xiaoi news data' % time.strftime('%Y-%m-%d %H:%M:%S'))
     try:
-        params = {'newsData': json.dumps(news_data), 'categoryName': CATE_DIR}
-        # respJson = requests.post(XINHUA_SAVE_ACTION, params, headers=REQ_HEADERS, timeout=20).json()
-        # print(respJson)
+        news_data = extract_news_data()
+        print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), COUNTER))
+        params = {'newsData': json.dumps({'origin': '新华网', 'data': news_data})}
+        resp = requests.post('http://localhost:8081/kbase-core/action/spider/ai-of-day!save.htm',
+                             params, headers=HEADERS, timeout=120)
+        if resp.status_code == 200 and resp.content:
+            print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), resp.json()))
+        else:
+            print('[%s] error occurred in save action ' % time.strftime('%Y-%m-%d %H:%M:%S'))
+        print('=============================================================================')
     except Exception as e:
         print(str(e))
-
-
-if __name__ == '__main__':
-    save_2_core(extract_news_data(extract_news_list()))

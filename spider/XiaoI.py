@@ -5,14 +5,14 @@
 # 小i新闻爬虫
 
 
-import time, datetime
+import time
+import datetime
 import json
 import requests
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
 }
-XIAOI_SAVE_ACTION = 'xxx/kbase-core/action/spider/ai-of-week!save.htm'
 BASE_URL = "https://www.xiaoi.com"
 # 行业分类
 APP = {
@@ -35,7 +35,7 @@ TEMPLATE = '<div style="width: 100%; padding-top: 10px; padding-bottom: 20px;" c
             </div>'
 
 if __name__ == '__main__':
-    print('[%s] start grab data' % time.strftime('%Y-%m-%d %H:%M:%S'))
+    print('[%s] start grab xiaoi news data' % time.strftime('%Y-%m-%d %H:%M:%S'))
     news_data = {}
     counter = 0
     try:
@@ -77,9 +77,13 @@ if __name__ == '__main__':
                 })
             news_data[key] = {'category': cate_name, 'list': data_list}
         print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), counter))
-        params = {'newsData': json.dumps(news_data)}
-        respJson = requests.post(XIAOI_SAVE_ACTION, params, headers=HEADERS, timeout=20).json()
-        print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), respJson))
+        params = {'newsData': json.dumps({'origin': '小i新闻', 'data': news_data})}
+        resp = requests.post('http://localhost:8081/kbase-core/action/spider/ai-of-day!save.htm',
+                             params, headers=HEADERS, timeout=120)
+        if resp.status_code == 200 and resp.content:
+            print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), resp.json()))
+        else:
+            print('[%s] error occurred in save action ' % time.strftime('%Y-%m-%d %H:%M:%S'))
         print('=============================================================================')
     except Exception as e:
         print(str(e))

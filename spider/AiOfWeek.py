@@ -14,7 +14,6 @@ from bs4 import BeautifulSoup
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
 }
-AI_SAVE_ACTION = 'xxx/kbase-core/action/spider/ai-of-week!save.htm'
 BASE_URL = "http://ai.ofweek.com"
 # 行业分类
 APP = {
@@ -59,9 +58,13 @@ if __name__ == '__main__':
                 })
             news_data[key] = {'category': cate_name, 'list': data_list}
         print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), counter))
-        params = {'newsData': json.dumps(news_data)}
-        respJson = requests.post(AI_SAVE_ACTION, params, headers=HEADERS, timeout=20).json()
-        print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), respJson))
+        params = {'newsData': json.dumps({'origin': '人工智能网', 'data': news_data})}
+        resp = requests.post('http://localhost:8081/kbase-core/action/spider/ai-of-day!save.htm',
+                             params, headers=HEADERS, timeout=120)
+        if resp.status_code == 200 and resp.content:
+            print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), resp.json()))
+        else:
+            print('[%s] error occurred in save action ' % time.strftime('%Y-%m-%d %H:%M:%S'))
         print('=============================================================================')
     except Exception as e:
         print(str(e))
