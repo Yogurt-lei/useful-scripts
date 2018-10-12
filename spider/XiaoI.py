@@ -50,7 +50,6 @@ if __name__ == '__main__':
             cate_name = value[0]
             url = BASE_URL + value[1]
             respJson = requests.get(url, headers=HEADERS).json()
-            print(respJson)
             data_list = []
             for data in respJson:
                 id = data['id']
@@ -59,7 +58,7 @@ if __name__ == '__main__':
                 title = data['title']
                 create_time = int(data['create_time'])
                 # 获取今日数据
-                if not int(start_time_stamp) <= create_time <= int(end_time_stamp):
+                if not start_time_stamp <= create_time <= end_time_stamp:
                     continue
 
                 counter = counter + 1
