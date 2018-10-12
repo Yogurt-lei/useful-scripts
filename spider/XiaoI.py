@@ -14,9 +14,16 @@ HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
 }
 BASE_URL = "https://www.xiaoi.com"
+
+now = datetime.datetime.now()
+start_time = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
+end_time = start_time + datetime.timedelta(hours=23, minutes=59, seconds=59)
+start_time_stamp = int(start_time.timestamp())
+end_time_stamp = int(end_time.timestamp())
+
 # 行业分类
 APP = {
-    "xiaoi": ["小i新闻", "/api/api.aspx?order=1538984151&intcount=5&Cmd=getnew"]
+    "xiaoi": ["小i新闻", "/api/api.aspx?order=" + str(start_time_stamp) + "&intcount=5&Cmd=getnew"]
 }
 
 TEMPLATE = '<div style="width: 100%; padding-top: 10px; padding-bottom: 20px;" class="col-xs-12 container">\
@@ -43,6 +50,7 @@ if __name__ == '__main__':
             cate_name = value[0]
             url = BASE_URL + value[1]
             respJson = requests.get(url, headers=HEADERS).json()
+            print(respJson)
             data_list = []
             for data in respJson:
                 id = data['id']
@@ -51,11 +59,7 @@ if __name__ == '__main__':
                 title = data['title']
                 create_time = int(data['create_time'])
                 # 获取今日数据
-                now = datetime.datetime.now()
-                startTime = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second,
-                                                     microseconds=now.microsecond)
-                endTime = startTime + datetime.timedelta(hours=23, minutes=59, seconds=59)
-                if not int(startTime.timestamp()) <= create_time <= int(endTime.timestamp()):
+                if not int(start_time_stamp) <= create_time <= int(end_time_stamp):
                     continue
 
                 counter = counter + 1
