@@ -23,49 +23,72 @@ def starter(workPath, oldCommitId, newCommitId):
        :type oldCommitId: string commitId
        :type newCommitId: string commitId
     """
+    global ctx, curr_branch, unStash
+    unStash = False
+    # 未指定 --pname 工作区 默认为当前文件夹
+    if not workPath:
+        if valider_path(os.path.join(os.getcwd(), '.git')) == _DIR:
+            workPath = os.getcwd()
+        else:
+            raise RuntimeError('未指定--pname参数且当前文件夹非git项目')
     # 定位到项目路径
     try:
         os.chdir(workPath)
     except FileNotFoundError:
         print('项目路径不正确,重新指定 --pname参数')
 
-    basePath = workPath.rstrip(os.sep)
-    global ctx
-    ctx = basePath[basePath.rfind(os.sep) + 1:]
-    compile_workspace()
-
-    # 创建补丁包文件夹
-    try:
-        os.mkdir(ctx)
-    except FileExistsError:
-        shutil.rmtree(ctx)
-        os.mkdir(ctx)
-
     if os.system('git --version') != 0:
         raise RuntimeError('git配置有误,检查git配置')
-    if os.system('git diff %s %s > diff.patch' % (oldCommitId, newCommitId)) != 0:
-        raise RuntimeError('未能对比出comit差异,检查--ocid和--ncid参数')
+    else:
+        if os.system('git show %s %s --name-only' % (oldCommitId, newCommitId)) != 0:
+            raise RuntimeError('不正确的commitId参数,检查--ocid和--ncid参数')
+        # 保存现场
+        for line in os.popen('git branch').readlines():
+            if line.startswith('*'):
+                curr_branch = line[1:].strip()
+                break
+        os.system('git stash save "temp_statsh_for_update"')
+        os.system('git checkout %s' % newCommitId)
 
-    # 遍历diff
-    with open('diff.patch', errors='ignore') as fr:
-        line = fr.readline()
-        while line:
-            matcher = re.match(r'^diff --git a/(.*) b/(.*)', line)
-            if matcher is not None:
-                a = matcher.group(1)
-                if a.endswith(COMPLEX_HANDLE_FILE_TYPE):  # 复杂处理类型
-                    fr.seek(handle_complex_file_type(a, fr.tell()))
-                else:
-                    try:
-                        if a.startswith('src/main/resources'):
-                            handle_src_main_resources(a)
-                        elif a.startswith('src/main/webapp'):
-                            handle_src_main_webapp(a)
-                        elif a.startswith('src/main/java'):
-                            handle_src_main_java(a)
-                    except FileNotFoundError:
-                        OUT_PUT_LIST['delete'].append(a)
+    try:
+        basePath = workPath.rstrip(os.sep)
+        ctx = basePath[basePath.rfind(os.sep) + 1:]
+        compile_workspace()
+        os.system('git diff %s %s > diff.patch' % (oldCommitId, newCommitId))
+
+        # 创建补丁包文件夹
+        try:
+            os.mkdir(ctx)
+        except FileExistsError:
+            shutil.rmtree(ctx)
+            os.mkdir(ctx)
+
+        # 遍历diff action
+        with open('diff.patch', errors='ignore') as fr:
             line = fr.readline()
+            while line:
+                matcher = re.match(r'^diff --git a/(.*) b/(.*)', line)
+                if matcher is not None:
+                    a = matcher.group(1)
+                    if a.endswith(COMPLEX_HANDLE_FILE_TYPE):  # 复杂处理类型
+                        fr.seek(handle_complex_file_type(a, fr.tell()))
+                    else:
+                        try:
+                            if a.startswith('src/main/resources'):
+                                handle_src_main_resources(a)
+                            elif a.startswith('src/main/webapp'):
+                                handle_src_main_webapp(a)
+                            elif a.startswith('src/main/java'):
+                                handle_src_main_java(a)
+                        except FileNotFoundError:
+                            OUT_PUT_LIST['delete'].append(a)
+                line = fr.readline()
+    except:
+        # 异常恢复现场
+        unStash = True
+        os.system('git checkout %s' % curr_branch)
+        os.system('git stash pop')
+        raise RuntimeError('编译工作区发生异常')
 
 
 def cleaner(ocid, ncid):
@@ -104,8 +127,11 @@ def cleaner(ocid, ncid):
             f.write(os.path.join(dirpath, filename))
     f.close()
     os.remove('diff.patch')
-    os.remove('effective-pom.xml')
     shutil.rmtree(ctx)
+    # 正常恢复现场
+    if not unStash:
+        os.system('git checkout %s' % curr_branch)
+        os.system('git stash pop')
 
 
 def handle_complex_file_type(sourceLine, pos):
@@ -155,40 +181,36 @@ def handle_complex_file_type(sourceLine, pos):
 
 def compile_workspace():
     """
-    编译工作区 jdk8+maven3.x 区分eclipse还是Idea eclipse会自动编译 此处不编译
+    编译工作区 jdk8+maven3.x,
+    针对eclipse项目和idea项目做不同路径查询处理
     """
     try:
-        if valider_path('pom.xml') == _FILE:
+        if not valider_path('pom.xml') == _FILE:
             pass
     except FileNotFoundError:
         raise RuntimeError('非MAVEN项目 无法编译工作区')
 
-    needCompile = False
+    # 找寻输出路径
+    global CLASSPATH
     try:
         if valider_path('.classpath') == _FILE:
+            for child in ET.parse('.classpath').getroot():
+                if child.tag == 'classpathentry' and child.attrib['kind'] == 'output':
+                    CLASSPATH = os.path.join(os.getcwd(), child.attrib['path'])
             pass
     except FileNotFoundError:
         try:
             if valider_path('%s.iml' % ctx) == _FILE:
-                needCompile = True
+                for child in ET.parse('%s.iml' % ctx).getroot():
+                    if child.tag == 'component' and child.attrib['name'] == 'NewModuleRootManager':
+                        output = child.find('output').attrib['url']
+                        CLASSPATH = os.path.join(os.getcwd(),
+                                                 output[output.find('/$MODULE_DIR$/') + len('/$MODULE_DIR$/'):])
         except FileNotFoundError:
-            needCompile = True
+            raise RuntimeError('非eclipse或IDEA项目 未找到.classpath文件或iml文件')
 
-    if needCompile:
-        if os.system('mvn -v') != 0:
-            raise RuntimeError('无法自动编译项目 检查MAVEN配置')
-
-        if os.system('mvn clean compile -Dfile.encoding=UTF-8 -Dmaven.test.skip=true') != 0:
-            raise RuntimeError('项目编译失败 检查配置')
-
-    # 获取编译输出路径
-    if os.system("mvn help:effective-pom -Doutput=effective-pom.xml") == 0:
-        POM_NS = "{http://maven.apache.org/POM/4.0.0}"
-        root = ET.parse('effective-pom.xml').getroot()
-        global CLASSPATH
-        CLASSPATH = root.find('%sbuild' % POM_NS).find('%soutputDirectory' % POM_NS).text
-        if not CLASSPATH:
-            raise RuntimeError('无法找到编译输出路径')
+    if os.system('mvn clean compile -Dfile.encoding=UTF-8 -Dmaven.test.skip=true') != 0:
+        raise RuntimeError('项目编译失败 检查配置')
 
 
 def handle_src_main_resources(line):
@@ -292,10 +314,15 @@ if __name__ == '__main__':
     parser.add_argument('--ncid', type=str, default=None)
     args = parser.parse_args()
 
-    if not args.pname or not args.ocid or not args.ncid:
-        raise RuntimeError('参数指定不完整, --pname=项目路径 --ocid --ncid 指定commit-id')
+    if not args.ocid or not args.ncid:
+        raise RuntimeError('参数指定不完整:--ocid(旧提交) --ncid(新提交) short hash index')
 
-    start = time.clock()
-    starter(args.pname, args.ocid, args.ncid)
-    cleaner(args.ocid, args.ncid)
-    print('operation is success exit. used time : %ss' % (time.clock() - start))
+    start = time.process_time()
+
+    try:
+        starter(args.pname, args.ocid, args.ncid)
+        cleaner(args.ocid, args.ncid)
+    except:
+        pass
+
+    print('operation is success exit. used time : %ss' % (time.process_time() - start))
