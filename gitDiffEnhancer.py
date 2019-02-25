@@ -314,6 +314,14 @@ if __name__ == '__main__':
     parser.add_argument('--ncid', type=str, default=None)
     args = parser.parse_args()
 
+    # 只填写了一个commit参数 默认为HEAD
+    if args.ocid and not args.ncid:
+        args.ncid = 'HEAD'
+
+    if not args.ocid and args.ncid:
+        args.ocid = args.ncid
+        args.ncid = 'HEAD'
+
     if not args.ocid or not args.ncid:
         raise RuntimeError('参数指定不完整:--ocid(旧提交) --ncid(新提交) short hash index')
 
