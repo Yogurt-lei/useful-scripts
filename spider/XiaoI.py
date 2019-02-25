@@ -13,7 +13,7 @@ import requests
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
 }
-BASE_URL = "https://www.xiaoi.com"
+BASE_URL = "http://www.xiaoi.com"
 
 now = datetime.datetime.now()
 start_time = now - datetime.timedelta(hours=now.hour, minutes=now.minute, seconds=now.second,
