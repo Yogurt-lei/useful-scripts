@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# Start Script for the RocketMQ Server
+#
+# by yogurt_lei@foxmail.com in 2019-03-06 19:11:11
+#
+
+VERSION=1.0-20190307
+BROKER_PORT=9876
+
+#check if root role
+myself=`whoami`
+if [[ "$myself" != "root" ]]; then
+    echo "your role must be root.";
+    exit 1
+fi
+
+if [[ "$1" = "-help" || "$1" = "-h" || "$1" = "" ]]; then
+  echo "Version:($VERSION) easy to use rocketmq contains nameserver, broker and mq-console"
+  echo "Usage: rocketmq [ command ]"
+  echo "command:"
+  echo "  start             Start rocketmq in a separate process"
+  echo "  stop              Stop rocketmq"
+  exit 1
+else
+    #check basic configuration
+    echo "========== check basic configuration ========="
+    #
+    if [[ -z ${JAVA_HOME} ]]; then
+        echo "Failed to find \$JAVA_HOME, did you forget to configure in \$PATH?"
+        exit 1
+    fi
+
+    if [[ -z ${ROCKET_MQ_HOME} ]]; then
+        echo "Failed to find \$ROCKET_MQ_HOME, did you forget to configure in \$PATH?"
+        exit 1
+    fi
+    echo "basic configuration is checkd complete"
+
+    # check boot is complete
+    function checkBootIsComplete() {
+        while :
+            do
+            # check boot failed
+#            if [[ `grep -c "Exception" $1` -ne '0' ]]; then
+#                echo "boot $2 failed with exception, please check $1 with detail."
+#                exit 1
+#            fi
+
+            # check boot success
+            if [[ `grep -c "$3" $1` -ne '0' ]]; then
+                break
+            fi
+            sleep 1
+            echo "wait... $2 booting"
+            done
+    }
+
+    # check process is exist, 1 for exist, 0 for not exist
+    function checkProcessIsExist() {
+        if [[ `ps -ef| grep $1 | grep -v grep | grep -v $0|wc -l` -eq 0 ]]; then
+            return 0;
+        else
+            return 1;
+        fi
+    }
+
+    if [[ "$1" = "start" ]]; then
+        # check mq process
+        checkProcessIsExist "rocketmq"
+
+        if [[ $? -eq 1 ]]; then
+            echo "find rocketmq process, please check your process"
+            exit 1
+        fi
+
+        echo "========= step 1: Start NameServer ========="
+        # mkdir log base
+        logbase=${ROCKET_MQ_HOME}/logs
+
+        if [[ ! -d "${logbase}" ]]; then
+            mkdir ${logbase}
+        fi
+
+        if [[ -e "${logbase}/namesrv.log" ]]; then
+            rm -f ${logbase}/namesrv.log
+        fi
+        touch ${logbase}/namesrv.log
+
+        # start name server
+        `nohup ${ROCKET_MQ_HOME}/bin/mqnamesrv > ${logbase}/namesrv.log 2>&1 &`
+        checkBootIsComplete ${logbase}/namesrv.log 'namesrv' 'boot success'
+
+        echo "========= step 2: Start Broker in port ${BROKER_PORT} ========="
+        if [[ -e "${logbase}/broker.log" ]]; then
+            rm -f ${logbase}/broker.log
+        fi
+        touch ${logbase}/broker.log
+
+        # startup command
+        `nohup ${ROCKET_MQ_HOME}/bin/mqbroker -n localhost:${BROKER_PORT} > ${logbase}/broker.log 2>&1 &`
+        #  The broker[%s, 172.30.30.233:10911] boot success...
+        checkBootIsComplete ${logbase}/broker.log 'broker' 'boot success'
+
+        echo "========= step 3: Start MQ Console ========="
+        CONSOLE_LOG=${ROCKET_MQ_HOME}/console/stdout.log
+        if [[ -e "${CONSOLE_LOG}" ]]; then
+            rm -f ${CONSOLE_LOG}
+        fi
+        `${ROCKET_MQ_HOME}/console/startup.sh`
+        checkBootIsComplete ${CONSOLE_LOG} 'mq console' 'Started App'
+
+        echo "========= RocketMQ boot complete ========="
+    elif [[ "$1" = "stop" ]]; then
+        # check mq process
+        checkProcessIsExist "rocketmq"
+
+        if [[ $? -eq 0 ]]; then
+            echo "can't find rocketmq process, please check your process"
+            exit 1
+        fi
+
+        echo "========= step 1: Shutdown Broker ========="
+        # shutdown broker
+        `${ROCKET_MQ_HOME}/bin/mqshutdown broker> ${logbase}/broker.log 2>&1`
+        echo "Send shutdown request to mqbroker"
+        sleep 1
+
+        echo "========= step 2: Shutdown NameServer ========="
+        # shutdown name server
+        `${ROCKET_MQ_HOME}/bin/mqshutdown namesrv > ${logbase}/namesrv.log 2>&1`
+        echo "Send shutdown request to mqnamesrv"
+        sleep 1
+
+        echo "========= step 3: Shutdown MQ Console ========="
+        `${ROCKET_MQ_HOME}/console/shutdown.sh`
+        sleep 1
+        echo "========= RocketMQ Shutdown complete ========="
+    fi
+fi
