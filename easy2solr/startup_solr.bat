@@ -1,7 +1,7 @@
 @echo off
 if "%OS%" == "Windows_NT" setlocal
 rem ---------------------------------------------------------------------------
-rem  ensy start solr7 by yogurt_lei
+rem  easy start solr7 by yogurt_lei
 rem ---------------------------------------------------------------------------
 
 set PORT=8984
