@@ -59,12 +59,12 @@ if __name__ == '__main__':
             news_data[key] = {'category': cate_name, 'list': data_list}
         print('[%s] complete grab total %s data' % (time.strftime('%Y-%m-%d %H:%M:%S'), counter))
         params = {'newsData': json.dumps({'origin': '人工智能网', 'data': news_data})}
-        resp = requests.post('http://localhost:8081/kbase-core/action/spider/ai-of-day!save.htm',
-                             params, headers=HEADERS, timeout=120)
+        resp = requests.post('http://trainer.wise4ai.com:7440/wise-core/action/spider/ai-of-day!save.htm',
+                             params, headers=HEADERS, timeout=180)
         if resp.status_code == 200 and resp.content:
             print('[%s] complete save action: %s ' % (time.strftime('%Y-%m-%d %H:%M:%S'), resp.json()))
         else:
-            print('[%s] error occurred in save action ' % time.strftime('%Y-%m-%d %H:%M:%S'))
+            print('[%s] error occurred in save action: %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), resp.json()))
         print('=============================================================================')
     except Exception as e:
         print(str(e))
