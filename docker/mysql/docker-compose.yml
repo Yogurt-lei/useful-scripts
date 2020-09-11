@@ -1,0 +1,35 @@
+version: '3'
+services:
+  mysql-master:
+    image: mysql:5.7.26
+    container_name: mysql-master
+    hostname: mysql-master
+    restart: always
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=wise@2020'
+      - 'MYSQL_ROOT_HOST=%'
+    volumes:
+      - './master/data:/var/lib/mysql'
+      - './master/my.cnf:/etc/mysql/my.cnf'
+    links:
+      - mysql-slave
+    ports:
+      - '3306:3306'
+  mysql-slave:
+    image: mysql:5.7.26
+    container_name: mysql-slave
+    hostname: mysql-slave
+    restart: always
+    environment:
+      - 'MYSQL_ROOT_PASSWORD=wise@2020'
+      - 'MYSQL_ROOT_HOST=%'
+    volumes:
+      - './slave/data:/var/lib/mysql'
+      - './slave/my.cnf:/etc/mysql/my.cnf'
+    ports:
+      - '3307:3306'
+
+
+networks:
+  wise_net:
+    external: true

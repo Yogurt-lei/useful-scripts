@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:5
+    container_name: redis
+    restart: always
+    hostname: redis
+    volumes:
+      - "./redis.config:/usr/local/etc/redis/redis.config"
+      - "./data/:/data/"
+    ports:
+      - "6379:6379"
+    command: "redis-server /usr/local/etc/redis/redis.config"
+
+networks:
+  default:
+    external:
+      name: yogurt

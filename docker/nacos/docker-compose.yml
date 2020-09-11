@@ -1,0 +1,37 @@
+version: '2'
+services:
+  nacos:
+    image: nacos/nacos-server:latest
+    container_name: nacos
+    environment:
+      - PREFER_HOST_MODE=hostname
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql-master
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_USER=nacos
+      - MYSQL_SERVICE_PASSWORD=nacos
+    volumes:
+      - ./logs/:/home/nacos/logs
+      - ./init.d/custom.properties:/home/nacos/init.d/custom.properties
+    ports:
+      - '8848:8848'
+      - '9555:9555'
+    restart: always
+  # prometheus:
+  #   container_name: prometheus
+  #   image: prom/prometheus:latest
+  #   volumes:
+  #     - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - '9090:9090'
+  #   depends_on:
+  #     - nacos
+  #   restart: always
+  # grafana:
+  #   container_name: grafana
+  #   image: grafana/grafana:latest
+  #   ports:
+  #     - 3000:3000
+  #   restart: always

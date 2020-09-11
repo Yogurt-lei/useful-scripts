@@ -1,0 +1,43 @@
+## Default Elasticsearch configuration from Elasticsearch base image.
+## https://github.com/elastic/elasticsearch/blob/master/distribution/docker/src/docker/config/elasticsearch.yml
+#
+network.host: 0.0.0.0
+
+# 1. 生成内置用户密码
+# bin/elasticsearch-setup-passwords interactive
+# // 或自动生成并设置密码
+# bin/elasticsearch-setup-passwords auto
+# bin/elasticsearch-certutil ca
+# ENTER ENTER
+# bin/elasticsearch-certutil cert --ca elastic-stack-ca.p12
+# ENTER ENTER ENTER
+
+# 跨域访问
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+
+## X-Pack settings
+## see https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-xpack.html
+
+xpack.security.enabled: true
+xpack.license.self_generated.type: basic
+xpack.monitoring.collection.enabled: true
+
+#xpack.security.transport.ssl.enabled: true
+#xpack.security.transport.ssl.keystore.type: PKCS12
+#xpack.security.transport.ssl.verification_mode: certificate
+#xpack.security.transport.ssl.keystore.path: elastic-certificates.p12
+#xpack.security.transport.ssl.truststore.path: elastic-certificates.p12
+#xpack.security.transport.ssl.truststore.type: PKCS12
+
+logger.level: warn
+
+# 锁定物理内存地址，防止elasticsearch内存被交换出去,也就是避免es使用swap交换分区
+bootstrap.memory_lock: true
+
+#设置es最大缓存数据条数和缓存失效时间,通过设置index.cache.field.max_size: 50000来把缓存field的最大值设置为50000,
+#设置index.cache.field.expire: 10m把过期时间设置成10分钟.
+#index.cache.field.max_size: 50000
+#index.cache.field.expire: 10m
+#index.cache.field.type: soft
+
