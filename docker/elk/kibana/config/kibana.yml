@@ -6,4 +6,4 @@ elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 ## X-Pack security credentials
 #
 elasticsearch.username: elastic
-elasticsearch.password: k7uPXGn9mWuBiq85COtn
+elasticsearch.password: W1QqYDqf7gxwuCqfTS8l

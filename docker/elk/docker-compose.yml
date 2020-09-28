@@ -7,10 +7,9 @@ services:
     hostname: elasticsearch
     restart: always
     environment:
-      - node.name=elasticsearch
-      - cluster.name=elasticsearch-docker
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ELASTIC_PASSWORD=W1QqYDqf7gxwuCqfTS8l"
     ulimits:
       memlock:
         soft: -1

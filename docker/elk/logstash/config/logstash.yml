@@ -5,4 +5,4 @@ xpack.monitoring.elasticsearch.hosts: [ "http://elasticsearch:9200" ]
 #
 xpack.monitoring.enabled: true
 xpack.monitoring.elasticsearch.username: elastic
-xpack.monitoring.elasticsearch.password: k7uPXGn9mWuBiq85COtn
+xpack.monitoring.elasticsearch.password: W1QqYDqf7gxwuCqfTS8l
