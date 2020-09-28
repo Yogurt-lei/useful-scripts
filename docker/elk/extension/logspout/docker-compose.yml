@@ -1,0 +1,20 @@
+version: '3.2'
+
+services:
+  logspout:
+    image: trainer.wise4ai.com/mid/elk-logspout:latest
+    container_name: logspout
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      ROUTE_URIS: logstash://logstash:5000
+      LOGSTASH_TAGS: docker-elk
+      SYSLOG_FORMAT: rfc5244
+    restart: on-failure:3
+    external_links:
+      - logstash:logstash
+
+networks:
+  default:
+    external:
+      name: wise_sfbd_net

@@ -29,6 +29,7 @@ services:
   logstash:
     image: logstash:$ELK_VERSION
     container_name: logstash
+    hostname: logstash
     volumes:
       - $PWD/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - $PWD/logstash/pipeline:/usr/share/logstash/pipeline
@@ -46,6 +47,7 @@ services:
   kibana:
     image: kibana:$ELK_VERSION
     container_name: kibana
+    hostname: kibana
     volumes:
       - $PWD/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
     ports:
