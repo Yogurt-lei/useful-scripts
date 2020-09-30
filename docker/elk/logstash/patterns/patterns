@@ -1,2 +1,7 @@
 TOMCAT_TIME 20%{YEAR}-%{MONTHNUM}-%{MONTHDAY} %{HOUR}:?%{MINUTE}(?::?%{SECOND})
 LOG4J2 (?m)%{TOMCAT_TIME:log_time}%{SPACE}*%{LOGLEVEL:log_level}%{SPACE}*---%{SPACE}*%{GREEDYDATA:log_message}
+
+# used for nginx
+ERRORDATE %{YEAR}/%{MONTHNUM}/%{MONTHDAY} %{TIME}
+NGINX_ACCESS %{IP:remote_addr} \- \- \[%{HTTPDATE:time_local}\] "%{DATA:request}" %{NUMBER:status} %{NUMBER:body_bytes_sent} "%{DATA:referer}" "%{DATA:user_agent}" "%{DATA:x_forwarded_for}"
+NGINX_ERROR %{ERRORDATE:time_local} \[%{LOGLEVEL:log_level}\] %{POSINT}#%{NUMBER}: %{GREEDYDATA:error_message}, client: %{IP}, server: %{IPORHOST:server}, request: "%{DATA:request}", host: "%{HOSTNAME:host_domain}", referrer: "%{NOTSPACE:referer}"
