@@ -9,7 +9,9 @@ services:
     environment:
       ROUTE_URIS: logstash://logstash:5000
       LOGSTASH_TAGS: docker-elk
-      SYSLOG_FORMAT: rfc5244
+      LOGSPOUT: ignore
+      SYSLOG_FORMAT: rfc5424
+      BACKLOG: "false"
     restart: on-failure:3
     external_links:
       - logstash:logstash

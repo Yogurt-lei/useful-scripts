@@ -4,7 +4,8 @@
 
 ## Usage
    
-   If you want to include the Logspout extension, run Docker Compose from the root of the repository with an additional command line argument referencing the logspout-compose.yml file:
+   If you want to include the Logspout extension, 
+   run Docker Compose from the root of the repository with an additional command line argument referencing the logspout-compose.yml file:
 
 `$ docker-compose -f docker-compose.yml -f extensions/logspout/logspout-compose.yml up`
 

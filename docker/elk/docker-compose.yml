@@ -7,6 +7,7 @@ services:
     hostname: elasticsearch
     restart: always
     environment:
+      - LOGSPOUT=ignore
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - "ELASTIC_PASSWORD=W1QqYDqf7gxwuCqfTS8l"
@@ -27,17 +28,23 @@ services:
       - wise_sfbd_net
 
   logstash:
-    image: logstash:$ELK_VERSION
+#    image: logstash:$ELK_VERSION
+    build:
+      context: logstash/
+      args:
+        ELK_VERSION: $ELK_VERSION
     container_name: logstash
     hostname: logstash
     volumes:
       - $PWD/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
       - $PWD/logstash/pipeline:/usr/share/logstash/pipeline
+      - $PWD/logstash/patterns:/usr/share/logstash/patterns
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"
       - "9600:9600"
     environment:
+      LOGSPOUT: ignore
       LS_JAVA_OPTS: "-Xmx256m -Xms256m"
     networks:
       - wise_sfbd_net
@@ -48,6 +55,8 @@ services:
     image: kibana:$ELK_VERSION
     container_name: kibana
     hostname: kibana
+    environment:
+      LOGSPOUT: ignore
     volumes:
       - $PWD/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
     ports:

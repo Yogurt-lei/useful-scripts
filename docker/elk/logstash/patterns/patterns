@@ -1,0 +1,2 @@
+TOMCAT_TIME 20%{YEAR}-%{MONTHNUM}-%{MONTHDAY} %{HOUR}:?%{MINUTE}(?::?%{SECOND})
+LOG4J2 (?m)%{TOMCAT_TIME:log_time}%{SPACE}*%{LOGLEVEL:log_level}%{SPACE}*---%{SPACE}*%{GREEDYDATA:log_message}
